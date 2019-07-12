@@ -2,7 +2,7 @@
 
 Setup Steps:
 
-1. Open terminal and use command: sudo pip install packagename
+1. Open terminal and use command: sudo pip install packagename.  
    Run command for each of the following packages, replacing 'packagename' with the name of the package
       a. simple-salesforce
       b. datetime
