@@ -15,3 +15,4 @@ Setup Steps:
 3. Ensure Python script (line 21) and Arduino settings are set to stream and read from the same USB port
 
 4. Push the .ino file onto an Arduino
+
