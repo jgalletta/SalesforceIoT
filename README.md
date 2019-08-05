@@ -1,5 +1,7 @@
 # SalesforceIoT
 
+Full demo setup steps: https://salesforce.quip.com/KvYTAnTeBl64
+
 Setup Steps:
 
 1. Open terminal and use command: sudo pip install packagename.  
