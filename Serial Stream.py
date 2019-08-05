@@ -8,6 +8,7 @@ from Credentials import username, password
 import serial
 import threading
 import datetime
+import re
 
 
 # logging into Salesforce
@@ -19,6 +20,22 @@ print('Wating to detect cars...')
 
 # object to read in serial data from port: '/dev/cu.usbmodem14201'
 arduinoData = serial.Serial('/dev/cu.usbmodem14201', 9600)
+
+myid = str(sf.query("SELECT Id FROM Traffic_Tracker__c"))
+pattern = "'Id', '(.{18})'"
+r1 = re.findall(pattern, myid)
+ttid = r1[0]
+
+#query besthour object and strip the ID value
+constquery = str(sf.query("SELECT BHID__c FROM BestHourConst__c"))
+id = str(sf.query("SELECT Id FROM Best_Hour__c"))
+pattern = "'Id', '(.{18})'"
+r1 = re.findall(pattern, id)
+bhid = r1[0]
+if constquery[27] == '0':
+    sf.BestHourConst__c.create({"BHID__c": bhid})
+    besthourconstupdate = str(sf.query("SELECT BHID__c FROM BestHourConst__c"))
+    print("First time setup is complete!")
 
 # creating variables to store data and upload to org
 carCount = 0
@@ -70,7 +87,7 @@ def bestHour():
 
     #print(str(medmin) + ", " + str(medminindex))
     #print(str(highmin) + ", " + str(highminindex))
-    sf.Best_Hour__c.update('a0w4P00000NXLNhQAP', {"LowMedium_Priority__c": medminindex, "High_Priority__c": highminindex, "Crit_Priority__c": currhour})
+    sf.Best_Hour__c.update(bhid, {"LowMedium_Priority__c": medminindex, "High_Priority__c": highminindex, "Crit_Priority__c": currhour})
 
     # saves the array to local file
     with open("hourrecord.txt", "w") as f:
@@ -87,7 +104,7 @@ def lowerTraffic():
         carCount -= 1
         sensorCount -= 100
         sf.Traffic_Status__e.create({"Car_Rate__c": carCount, "Sensor_Name__c": "pe test"})
-        sf.Traffic_Tracker__c.update('a0r4P00002a55oMQAQ', {"Car_Rate__c": carCount})
+        sf.Traffic_Tracker__c.update(ttid, {"Car_Rate__c": carCount})
         print('Traffic rate lowered to: ' + str(carCount))
 
 #lowerTraffic()
@@ -95,27 +112,27 @@ bestHour()
 
 # Initialize platform event record and reset object record
 sf.Traffic_Status__e.create({"Car_Rate__c": carCount, "Sensor_Name__c": "pe test"})
-sf.Traffic_Tracker__c.update('a0r4P00002a55oMQAQ', {"Car_Rate__c": 0})
+sf.Traffic_Tracker__c.update(ttid, {"Car_Rate__c": 0})
 
 while True:
     # reads in serial data, strips it, and decodes it
     rawdata = (arduinoData.readline().strip())
     data = int(rawdata.decode('utf-8'))
-    # extra print statement for viewing live data/debugging
+    # extra print statement for viewing live da ta/debugging
     #print(data)
 
     # checks to see if object is <= 10cm from sensor and in front of sensor for > 1s
     if data <= 10:
         sensorCount += 1
-        if sensorCount %50 == 0:
-            carCount = int(sensorCount/100);
+        if sensorCount %80 == 0:
+            carCount = int(sensorCount/80);
             print('Car detected, cars counted is: ' + str(carCount))
             totalCars += 1
 
             #   ~~~THE MAGIC LINE OF CODE~~~
             # upserts a platform event of type traffic_status__e into the org, using # of cars counted as a parameter
             sf.Traffic_Status__e.create({"Car_Rate__c": carCount, "Sensor_Name__c": "pe test"})
-            sf.Traffic_Tracker__c.update('a0r4P00002a55oMQAQ', {"Car_Rate__c": carCount})
+            sf.Traffic_Tracker__c.update(ttid, {"Car_Rate__c": carCount})
             #   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             print('Platform Event and Object successfully upserted')
             currentDT = datetime.datetime.now()

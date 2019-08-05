@@ -39,9 +39,9 @@ void loop() {
   // adding LED functionality
   if (distance <= 10){
     count += 1;
-    if(count%50 == 0){
+    if(count%80 == 0){
       digitalWrite(ledPin, HIGH);
-      delay(200);
+      delay(160);
       digitalWrite(ledPin, LOW);
     }
   }
